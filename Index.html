@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Plan Analysis Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1 { color: #333; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, button, select { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
+        #output { margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Structural Plan Analysis Tool</h1>
+    <p>Upload your structural plan image and input design parameters to get tendon arrangement recommendations.</p>
+
+    <label for="planImage">Upload Plan Image:</label>
+    <input type="file" id="planImage" accept="image/*">
+
+    <label for="designCode">Select Design Code:</label>
+    <select id="designCode">
+        <option value="ACI">ACI 318</option>
+        <option value="IS">IS 1343</option>
+        <option value="EC">Eurocode</option>
+    </select>
+
+    <label for="materialStrength">Concrete Strength (MPa):</label>
+    <input type="number" id="materialStrength" value="30" min="10" max="100">
+
+    <label for="loadValue">Total Load (kN):</label>
+    <input type="number" id="loadValue" value="100" min="1">
+
+    <button onclick="analyzePlan()">Analyze Plan</button>
+
+    <div id="output"></div>
+
+    <script>
+        function analyzePlan() {
+            const output = document.getElementById('output');
+            const fileInput = document.getElementById('planImage');
+            const designCode = document.getElementById('designCode').value;
+            const materialStrength = parseFloat(document.getElementById('materialStrength').value);
+            const loadValue = parseFloat(document.getElementById('loadValue').value);
+
+            if (!fileInput.files.length) {
+                output.innerHTML = '<p style="color:red;">Please upload a plan image.</p>';
+                return;
+            }
+
+            // Placeholder for actual image processing and analysis
+            output.innerHTML = '<p>Processing image and analyzing plan...</p>';
+
+            // Simulate analysis delay
+            setTimeout(() => {
+                // Simulated output
+                const recommendedStrands = 12;
+                const spacing = '150 mm';
+                const directions = 'Longitudinal and Transverse';
+                const deflection = '5.2 mm';
+                const pOverA = '0.85 MPa';
+                const stresses = 'Within allowable limits';
+
+                output.innerHTML = `
+                    <h2>Analysis Results</h2>
+                    <p><strong>Design Code:</strong> ${designCode}</p>
+                    <p><strong>Concrete Strength:</strong> ${materialStrength} MPa</p>
+                    <p><strong>Total Load:</strong> ${loadValue} kN</p>
+                    <p><strong>Recommended Number of Strands:</strong> ${recommendedStrands}</p>
+                    <p><strong>Strand Spacing:</strong> ${spacing}</p>
+                    <p><strong>Strand Directions:</strong> ${directions}</p>
+                    <p><strong>Calculated Deflection:</strong> ${deflection}</p>
+                    <p><strong>P/A (Prestress per Area):</strong> ${pOverA}</p>
+                    <p><strong>Stress Status:</strong> ${stresses}</p>
+                `;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
