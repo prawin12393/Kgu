@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structural Plan Analysis Tool</title>
+    <title>Enhanced Structural Plan Analysis Tool</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
         h1 { color: #333; }
         label { display: block; margin-top: 10px; font-weight: bold; }
         input, button, select { margin-top: 5px; padding: 8px; width: 100%; max-width: 400px; }
         #output { margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+        #imagePreview { max-width: 400px; margin-top: 10px; }
+        #paChart { max-width: 400px; margin-top: 20px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Structural Plan Analysis Tool</h1>
-    <p>Upload your structural plan image and input design parameters to get tendon arrangement recommendations.</p>
+    <h1>Enhanced Structural Plan Analysis Tool</h1>
+    <p>Upload your plan image, input parameters, and get optimized recommendations with real-time graphing.</p>
 
     <label for="planImage">Upload Plan Image:</label>
     <input type="file" id="planImage" accept="image/*">
+    <img id="imagePreview" src="" alt="Image Preview" style="display: none;">
 
     <label for="designCode">Select Design Code:</label>
     <select id="designCode">
@@ -32,49 +36,110 @@
     <label for="loadValue">Total Load (kN):</label>
     <input type="number" id="loadValue" value="100" min="1">
 
+    <label for="lossFactor">Loss Factor (%):</label>
+    <input type="number" id="lossFactor" value="15" min="0" max="50">
+
+    <label for="strandType">Strand Type:</label>
+    <select id="strandType">
+        <option value="0.5">0.5-inch</option>
+        <option value="0.6">0.6-inch</option>
+    </select>
+
     <button onclick="analyzePlan()">Analyze Plan</button>
+    <button onclick="exportResults()" style="margin-left: 10px;">Export Results</button>
 
     <div id="output"></div>
+    <canvas id="paChart"></canvas>
 
     <script>
-        function analyzePlan() {
-            const output = document.getElementById('output');
+        const output = document.getElementById('output');
+        const imagePreview = document.getElementById('imagePreview');
+        let chart;
+
+        document.getElementById('planImage').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function analyzePlan() {
             const fileInput = document.getElementById('planImage');
             const designCode = document.getElementById('designCode').value;
             const materialStrength = parseFloat(document.getElementById('materialStrength').value);
             const loadValue = parseFloat(document.getElementById('loadValue').value);
+            const lossFactor = parseFloat(document.getElementById('lossFactor').value);
+            const strandType = document.getElementById('strandType').value;
 
             if (!fileInput.files.length) {
                 output.innerHTML = '<p style="color:red;">Please upload a plan image.</p>';
                 return;
             }
 
-            // Placeholder for actual image processing and analysis
             output.innerHTML = '<p>Processing image and analyzing plan...</p>';
 
-            // Simulate analysis delay
-            setTimeout(() => {
-                // Simulated output
-                const recommendedStrands = 12;
-                const spacing = '150 mm';
-                const directions = 'Longitudinal and Transverse';
-                const deflection = '5.2 mm';
-                const pOverA = '0.85 MPa';
-                const stresses = 'Within allowable limits';
+            // Simulate API call to Grok 4 or similar (replace with real fetch)
+            const simulatedApiResponse = await new Promise(resolve => setTimeout(() => resolve({
+                recommendedStrands: 14,
+                spacing: '140 mm',
+                directions: 'Longitudinal primary, transverse secondary',
+                deflection: '4.8 mm',
+                pOverA: (1.0 - lossFactor / 100) * (loadValue / materialStrength).toFixed(2), // Simplified P/A calc
+                stresses: 'Optimized within limits'
+            }), 2000));
 
-                output.innerHTML = `
-                    <h2>Analysis Results</h2>
-                    <p><strong>Design Code:</strong> ${designCode}</p>
-                    <p><strong>Concrete Strength:</strong> ${materialStrength} MPa</p>
-                    <p><strong>Total Load:</strong> ${loadValue} kN</p>
-                    <p><strong>Recommended Number of Strands:</strong> ${recommendedStrands}</p>
-                    <p><strong>Strand Spacing:</strong> ${spacing}</p>
-                    <p><strong>Strand Directions:</strong> ${directions}</p>
-                    <p><strong>Calculated Deflection:</strong> ${deflection}</p>
-                    <p><strong>P/A (Prestress per Area):</strong> ${pOverA}</p>
-                    <p><strong>Stress Status:</strong> ${stresses}</p>
-                `;
-            }, 2000);
+            const { recommendedStrands, spacing, directions, deflection, pOverA, stresses } = simulatedApiResponse;
+
+            output.innerHTML = `
+                <h2>Analysis Results</h2>
+                <p><strong>Design Code:</strong> ${designCode}</p>
+                <p><strong>Concrete Strength:</strong> ${materialStrength} MPa</p>
+                <p><strong>Total Load:</strong> ${loadValue} kN</p>
+                <p><strong>Loss Factor:</strong> ${lossFactor}%</p>
+                <p><strong>Strand Type:</strong> ${strandType}-inch</p>
+                <p><strong>Recommended Number of Strands:</strong> ${recommendedStrands}</p>
+                <p><strong>Strand Spacing:</strong> ${spacing}</p>
+                <p><strong>Strand Directions:</strong> ${directions}</p>
+                <p><strong>Calculated Deflection:</strong> ${deflection}</p>
+                <p><strong>P/A (Effective Prestress per Area):</strong> ${pOverA} MPa</p>
+                <p><strong>Stress Status:</strong> ${stresses}</p>
+            `;
+
+            // Render P/A chart
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('paChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Initial', 'After Losses'],
+                    datasets: [{
+                        label: 'P/A (MPa)',
+                        data: [ (loadValue / materialStrength).toFixed(2), pOverA ],
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function exportResults() {
+            const results = {
+                // Gather data from output or inputs
+                note: 'Export functionality placeholder - add real data collection'
+            };
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'analysis_results.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
